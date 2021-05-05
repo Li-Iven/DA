@@ -1,0 +1,93 @@
+\section{Тест производительности}
+
+Тест производительности представляет из себя следующее: мы обрабатываем различные тексты и измеряем время подсчёта для них Z-функции.
+
+\vspace{\baselineskip}
+
+Для этого создаём программу для генерации тестов. 
+
+\vspace{\baselineskip}
+\begin{lstlisting}[language=Python]
+import random
+import string
+from random import choice
+
+def main():
+    pattern_size = random.randint(3, 10)
+    pattern = []
+    text = []
+    words_in_pattern = ["dog", "cat", "bird"]
+    words_in_text = ["dog", "cat", "bird", "Who", "Yatty", "AttackHelicopter", "doctor", "parzival", "Nyaaa", "tyan"]
+    for i in range(pattern_size):
+        pattern.append(choice(words_in_pattern))
+    count = 0
+    while (count < 10000):
+        rand = random.randint(1, 100)
+        if (rand > 90):
+            for i in pattern:
+                text.append(i)
+            count  = count + pattern_size
+        else:
+            text.append(choice(words_in_text))
+            count = count + 1
+
+    test_file = open('test01.t', 'w')
+    for i in range(len(pattern)):
+        if (i == len(pattern) - 1):
+            test_file.write(pattern[i] + '\n')
+        else:
+            test_file.write(pattern[i] + ' ')
+    
+    # test_file.write('\n')
+    for i in text:
+        rand = random.randint(1, 100)
+        if (rand > 85):
+            test_file.write('\n')
+        test_file.write(i + ' ')
+    
+    test_file.close()
+
+    print('Pattern = ', pattern)
+main()
+\end{lstlisting}
+
+\vspace{\baselineskip}
+
+Так же создаём бенчмарк, для измерения времени работы Z-функции (с помощью библиотеки chrono - она позволяет замерить время от запуска функции до её завершения). Замерям время работы двух Z-функций - одной, основанной на алгоритме линейной сложности, и второй -  на наивном алгоритме квадратичной сложности. Причём проверям на одинаковых текстах, но разных рамеров.
+
+\begin{alltt}
+parsifal@DESKTOP-3G70RV4:~/DA/Lab4\$ python3 generator.py
+Pattern =  ['cat', 'bird', 'cat', 'cat', 'dog', 'dog', 'bird', 'dog']
+parsifal@DESKTOP-3G70RV4:~/DA/Lab4\$ g++ benchmark.cpp
+parsifal@DESKTOP-3G70RV4:~/DA/Lab4\$ ./a.out  < test01.t
+5815 вхождений
+Time O(n): 3916
+Time O(n^2): 5344
+\end{alltt}
+
+\vspace{\baselineskip}
+
+{\setlength{\extrarowheight}{7pt}
+\begin{center}
+\begin{tabular}{|m{3cm}|m{6cm}|}
+\hline
+\rowcolor{lightgray}
+Количество слов в тексте & Время работы \\
+\hline
+1000 & Наивного алгоритма: 7 \newline Линейного алгоритма: 7\\
+\hline
+1000 &  Наивного алгоритма: 57 \newline Линейного алгоритма: 49 \\
+\hline
+10.000 & Наивного алгоритма: 535 \newline Линейного алгоритма: 444\\
+\hline
+100.000 & Наивного алгоритма: 6115 \newline Линейного алгоритма: 4878\\
+\hline
+1.000.000 & Наивного алгоритма: 49608 \newline Линейного алгоритма: 34142\\
+\hline
+10.000.000 & Наивного алгоритма: 534655 \newline Линейного алгоритма: 419207\\
+\hline
+\end{tabular}
+\end{center}
+}
+
+\pagebreak

@@ -1,0 +1,197 @@
+\section{Описание}
+Требуется написать реализацию Z-функции для поиска подстроки в строке (образца в тексте).
+
+\vspace{\baselineskip}
+
+Справка вики\cite{wikipedia_z}: {\bfseries Z-фуннкция от строки S} — массив $Z_{1},\dots,Z_{n}$ такой что $Z_{i}$ равен длине наибольшего общего префикса начинающегося с позиции $i$ суффикса строки $S$ и самой строки $S$.
+
+\vspace{\baselineskip}
+
+Рассмотрим алгоритм вычисления Z-функции за линейное время:
+
+\begin{enumerate}
+    \item Назовём отрезком совпадения подстроку, совпадающую с префиксом $S$. Будем поддерживать координаты $l$ и $r$ самого правого отрезка совпадения. Пусть $i$ - текущий индекс, для которого мы хотим вычислить $Z_i(S)$.
+    \item Если $i <= r$ - попали в отрезок совпадения, так как строки совпадают, то и Z-блоки для них по отдельности совпадают $\Rightarrow Z_i(S) = z_{i - l}$. Так как $i + Z_i(S)$ может быть за пределами отрезка совпадения, то нужно ограничить значение величиной $r - i + 1$.
+    \item $i > r$ - тривиальный алгоритм (прсто прикладываем паттер к тексту , каждый раз сдвигая его на один символ). 
+    \item В конце обновляем отрезок совпадения, если $i + Z_i(S) > r$ (тривиальный алгортим вышел за отрезок совпадения): $l = i, r = i + Z_i(S) - 1$.
+\end{enumerate}
+
+\vspace{\baselineskip}
+Теперь рассмотрим алгоритм поиска подстроки в строке с помощью Z-фукнкции: 
+
+\vspace{\baselineskip}
+
+\begin{enumerate}
+    \item Во избежании путаницы назовём одну строку {\bfseries текстом $t$}, а другую - {\bfseries образцом $p$}. Таким образом, задача заключается в том, чтобы найти все вхождения образца $p$ в текст $t$.
+    \item Для решения этой задачи образуем строку $s = p + \# + t$, т.е. к образцу припишем текст через символ-разделитель (который не всечается нигде в самих строках). Так как у нас слова могут состоять из букв латинского алфавита, а в теексте могу встречаться цифры, то в кчестве символа-разделителя я буду использовать знак $\$$.
+    \item Поссчитаем для полученной строки Z-функцию. Тогда для любого $i$ в отрезке $[0; length(t) - 1]$ по соответствующему значению $z[i + length(p) + 1]$ можно понять, вхлдит ли образец $p$ в текст $t$, начиная с позиции $i$: если это значение Z-функции равно $length(p)$, то да, входит, иначе - нет.
+\end{enumerate}
+
+\vspace{\baselineskip}
+Таким образом, асимптотика решения получилась $O(length(t) + length(p))$. Потребление памяти имеет ту же асимптотику.
+
+\pagebreak
+
+\section{Исходный код}
+
+В начале создаём структуру случайного слова {\bfseries TWord}, в которой будут лежать строка, храниящая собственно само слово, и два числа - индекс строки, в которой находится этого слово, и его порядковый номер в ней.
+
+\vspace{\baselineskip}
+
+Далее реализуем саму Z-функцию, а так же вспомогательную функцию перевода букв слов в сторочные символы (для реализации регистронезависимости нашей программы).
+
+\vspace{\baselineskip}
+Потом в main посимвольно считываем сначала образец, а потом текст (посимвольное считывание нужно для правильной обработки знаков пробела, переноса строк, конца файла, а так же самих букв в словах). Парралельно с каждым знаком ' ' мы увеличиваем наш счётчик слов, а при переносе строки обнуляем его и увеличиваем счётчик строк. После считывания образца не забываем добавить к результирующей строке $s$ символ $\$$.
+
+\vspace{\baselineskip}
+
+Сам код:
+
+\vspace{\baselineskip}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <cstring>
+#include <vector>
+const unsigned int WORD_SIZE = 17;
+
+struct TWord {
+    std::string Word = "";
+    unsigned int WordIndex;
+    unsigned int LineIndex;
+
+    TWord() = default;
+    TWord(std::string &s, unsigned int wi, unsigned int li) {
+        Word = s;
+        WordIndex = wi;
+        LineIndex = li;
+    };
+    ~TWord() = default;
+
+    const bool operator==(const TWord &rhs) const {
+        for (unsigned int i = 0; i < WORD_SIZE; ++i) 
+            if (Word[i] != rhs.Word[i])
+                return false;
+            else return true;
+    }
+};
+
+std::vector<unsigned int> ZFunction(const std::vector<TWord> &text) {
+    unsigned int TextSize = text.size();
+    unsigned int left = 0;
+    unsigned int right = 0;
+    std::vector<unsigned int> result(TextSize);
+    for (unsigned int i = 1; i < TextSize; ++i) {
+        if (i <= right) { 
+            result[i] = std::min(result[i-left], right - i);
+        }
+        while ((result[i] + i < TextSize) && (text[result[i]].Word == text[result[i] + i].Word)) {
+            ++result[i];
+        }
+        if (i + result[i] > right) {
+            left = i;
+            right = result[i] + i;
+        }
+    }
+    return result;
+}
+
+void ToLower(char* str) {
+    if (*str>='A' and *str<='Z')
+        *str -= 'A'-'a';
+}
+
+int main() {
+
+    char c;
+    std::string word = "";
+    unsigned int PatternSize = 0;
+    unsigned int WordNumber = 0;
+    unsigned int LineNumber = 1;
+    std::vector<TWord> text;
+
+    while ((c = getchar()) != EOF) {
+        if (c == '\n') {
+            if (word != "") {
+                ++WordNumber;
+                text.push_back(TWord(word,WordNumber,0));
+                ++PatternSize;
+                word = "";
+            }
+            break;
+        }
+        else if (c == ' ') {
+            if (word != "") {
+                ++WordNumber;
+                text.push_back(TWord(word,WordNumber,0));
+                ++PatternSize;
+                word = "";
+            }
+        }
+        else {
+            ToLower(&c);
+            word += c;
+        }
+    }
+    
+    if (PatternSize == 0) return 0;
+
+    std::string x = std::string("$");
+    text.push_back(TWord(x,0,0));
+
+    WordNumber = 0;
+
+    while ((c = getchar()) != EOF) {
+        if (c == '\n') {
+            ++WordNumber;
+            if (word != "") {
+                text.push_back(TWord(word,WordNumber,LineNumber));
+                word = "";
+            }
+            ++LineNumber;
+            WordNumber = 0;
+        }
+        else if (c == ' ') {
+            if (word != "") {
+                ++WordNumber;
+                text.push_back(TWord(word,WordNumber,LineNumber));
+                word = "";
+            }
+        }
+        else {
+            ToLower(&c);
+            word +=c;
+        }
+    }
+
+    std::vector<unsigned int> Result = ZFunction(text);
+
+    for (int i = 0; i < text.size(); i++) {
+        if (Result[i] == PatternSize) std::cout << text[i].LineIndex << ", " << text[i].WordIndex << "\n";
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\vspace{\baselineskip}
+
+\pagebreak
+
+\section{Консоль}
+\begin{alltt}
+parsifal@DESKTOP-3G70RV4:~/DA/Lab4\$ python3 generator.py
+Pattern =  ['dog', 'cat', 'dog', 'dog', 'bird']
+parsifal@DESKTOP-3G70RV4:~/DA/Lab4\$ cat test01.t
+dog cat dog dog bird
+doctor parzival Yatty AttackHelicopter parzival cat
+dog dog
+cat
+dog dog bird
+doctor AttackHelicopter parzival doctor Yatty parzival dog cat
+dog dog bird 
+parsifal@DESKTOP-3G70RV4:~/DA/Lab4\$ g++ main.cpp
+parsifal@DESKTOP-3G70RV4:~/DA/Lab4\$ ./a.out  < test01.t
+2, 2
+5, 7
+\end{alltt}
+\pagebreak
