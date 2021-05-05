@@ -1,0 +1,74 @@
+\section{Тест производительности}
+{\itshape Тут Вы описываете собственно тест производительности, сравнение Вашей реализации с уже существующими и т.д.}
+
+
+Тест производительности представляет из себя следующее: мы сортируем начальный вектор пар \enquote{ключ - значение} двумя сортировками: нашей поразрядной сортировкой и втроеноой сортировкой std::stable\_sort.
+
+\vspace{\baselineskip}
+
+Для этого создаём программу для генерации тестов. 
+
+\vspace{\baselineskip}
+\begin{lstlisting}[language=Python]
+import sys
+import random
+import string
+
+def get_random_string():
+    length = random.randint(1, 64)
+    random_list = [ random.choice(string.ascii_letters) for _ in range(length) ]
+    return "".join(random_list)
+
+def main():
+    n = random.randint(100, 100)
+    for _ in range(n):
+        a = random.randint(1, 31)
+        b = random.randint(1, 12)
+        c = random.randint(1, 9999)
+        value = get_random_string()
+        print(f"{a}.{b}.{c} {value}")
+main()
+\end{lstlisting}
+
+\vspace{\baselineskip}
+
+И проверяем время работы сортировок (с помощью библиотеки chrono - она позволяет замерить время от запуска сортировки до её завершения). Причём проверям на одинаковых данных, но разных рамеров.
+
+\begin{alltt}
+parsifal@DESKTOP-3G70RV4:~/DA/lab1/make/solution\$ python3 generator.py > 1.t
+parsifal@DESKTOP-3G70RV4:~/DA/lab1/make/solution\$ g++ benchmark1.cpp
+parsifal@DESKTOP-3G70RV4:~/DA/lab1/make/solution\$ ./a.out < 1.t
+Count of lines is 10000
+Counting sort time: 3999us
+STL stable sort time: 4170us
+\end{alltt}
+
+{\setlength{\extrarowheight}{7pt}
+\begin{center}
+\begin{tabular}{|m{3cm}|m{6cm}|}
+\hline
+\rowcolor{lightgray}
+Количество строк в тесте & Время работы сортировок (мкс)\\
+\hline
+100 &Counting sort time: 150 \newline STL stable sort time: 25\\
+\hline
+1000 &  Counting sort time: 283 \newline STL stable sort time: 332 \\
+\hline
+5000 & Counting sort time: 1774 \newline STL stable sort time: 1866 \\
+\hline
+10.000 & Counting sort time: 3999 \newline STL stable sort time: 4170\\
+\hline
+100.000 & Counting sort time: 39795 \newline STL stable sort time: 49599\\
+\hline
+1.000.000 & Counting sort time: 411158 \newline STL stable sort time: 705164\\
+\hline
+\end{tabular}
+\end{center}
+}
+
+\vspace{\baselineskip}
+
+Так как в данном случае у нас m - константа, то сложность поразрядной сортировки становится $O(d*n)$, где n - число строк в тестовом файле, а $d=3$ - число разрядов.
+Можно увидеть, что при количестве текстов (n) большем или равном 1000 поразрядная сортировка опережает встроенную. При значениях же меньших 1000 встроенная сортировка опережает поразрядную, т.к. $O(3*n)<O(log(n)*n=O(2*n)$
+
+\pagebreak
