@@ -1,0 +1,23 @@
+\section{Тест производительности}
+
+Если решать задачу перебором, то мы получим сложность $O(n^3)$, тогда как наш олгоритм работает со сложностью $O(n^2)$ ($O(n*m + m + n)$. Сравним рвемя их работы на матрице размером 100*100
+
+\vspace{\baselineskip}
+
+\begin{alltt}
+parsifal@DESKTOP-3G70RV4:~/DA/Lab7\$ time ./Lab7 < test0.txt > out.txt
+
+real    0m0.540s
+user    0m0.521s
+sys     0m0.181s
+
+
+parsifal@DESKTOP-3G70RV4:~/DA/Lab7\$ time ./bench < test0.txt > out.txt
+
+real    2m1.320s
+user    2m1.134s
+sys     0m0.031s
+\end{alltt}
+\vspace{\baselineskip}
+
+\pagebreak
