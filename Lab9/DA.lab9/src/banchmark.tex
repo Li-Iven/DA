@@ -1,0 +1,56 @@
+\section{Тест производительности}
+
+Алгоритм можно было бы реализовать и без использования сета: в начале мы бы создали булевский массив размера $n$ для учёта посещённых/ не посещённых вершин. Тогда бы мы в цикле проходились по всем $n$ вершинам и для каждой из них пробегались бы $n$ раз по массиву использованных вершин. Плюс $m$ раз пробежались бы по рёбрам (суммарно за цикл). В итоге сложность была бы $O(n^2 + m)$.
+
+\vspace{\baselineskip}
+В случае же с сетом получаем: удаление из сета мы выполняем за логарифм, и в целом мы будем это выполнять n раз. Далее опять $m$ раз пробегаемся по соседям, когда ты мы будем делать удаление/вставку, когда то нет, но в целом это опять же будет работать за логарифм. В итоге получим сложность $O(n*log(n) + m*log(n))$ = $O(n*log(n))$.
+
+\vspace{\baselineskip}
+
+Создаим программу для генерации тестов: 
+
+\vspace{\baselineskip}
+\begin{lstlisting}[language=Python]
+import sys
+import random
+
+print(10**5, 10**5, 1, 10**5)
+
+a = random.randint(10**5,10**5)
+b = random.randint(1,10**5)
+c = random.randint(1,10**5)
+print(a, b, c)
+
+for x in range(10**5 - 1):
+    a = random.randint(1,10**5)
+    b = random.randint(1,10**5)
+    c = random.randint(1,10**5)
+    print(a, b, c)
+
+\end{lstlisting}
+
+\vspace{\baselineskip}
+
+Посмотрим время работы для теста с $n, m = 10^5$:
+
+\begin{alltt}
+parsifal@DESKTOP-3G70RV4:~/DA/Lab9\$ time ./Square < test.txt 
+905090
+
+real    2m46.507s
+user    2m46.156s
+sys     0m0.031s
+
+
+parsifal@DESKTOP-3G70RV4:~/DA/Lab9\$ time ./Log < test.txt 
+905090
+
+real    0m0.097s
+user    0m0.094s
+sys     0m0.000s
+
+\end{alltt}
+
+\vspace{\baselineskip}
+
+\pagebreak

@@ -1,0 +1,152 @@
+\section{Описание}
+Требуется написать реализацию алгоритма Дейкстры поиска кратчайшего пути между парой вершин в неориентированном взвешанном графе.
+
+\vspace{\baselineskip}
+
+Справка вики\cite{wiki}: {\bfseries Алгоритм Дейкстры} — находит кратчайшие пути от одной из вершин графа до всех остальных. Алгоритм работает только для графов без рёбер отрицательного веса.
+
+\vspace{\baselineskip}
+
+{\bfseries Неформальное объяснение:}
+
+Каждой вершине из $V$ сопоставим метку — минимальное известное расстояние от этой вершины до $a$.
+
+Алгоритм работает пошагово — на каждом шаге он «посещает» одну вершину и пытается уменьшать метки.
+
+Работа алгоритма завершается, когда все вершины посещены.
+
+\vspace{\baselineskip}
+{\bfseries Инициализация.}
+
+\begin{itemize}
+    \item Метка самой вершины $a$ полагается равной 0, метки остальных вершин — бесконечности.
+    \item Это отражает то, что расстояния от $a$ до других вершин пока неизвестны.
+    \item Все вершины графа помечаются как непосещённые.
+\end{itemize}
+
+\vspace{\baselineskip}
+{\bfseries Шаг алгоритма.}
+
+\begin{itemize}
+    \item Если все вершины посещены, алгоритм завершается.
+    \item В противном случае, из ещё не посещённых вершин выбирается вершина $u$, имеющая минимальную метку.
+    \item Мы рассматриваем всевозможные маршруты, в которых $u$ является предпоследним пунктом. Вершины, в которые ведут рёбра из $u$, назовём \emph{соседями} этой вершины. Для каждого соседа вершины $u$, кроме отмеченных как посещённые, рассмотрим новую длину пути, равную сумме значений текущей метки $u$ и длины ребра, соединяющего $u$ с этим соседом.
+    \item Если полученное значение длины меньше значения метки соседа, заменим значение метки полученным значением длины. Рассмотрев всех соседей, пометим вершину $u$ как посещённую и повторим шаг алгоритма.
+\end{itemize}
+
+\pagebreak
+
+\section{Исходный код}
+
+В начале создадим маленькую стрктурку ребра - она будет состоять из номера вершины, в котрое оно ведёт от текущей, и из стоимости ребра. Далее создаём граф - вектор векторов рёбер.
+
+Для учёта незанятых вершин используем сет, так как в нём удобно находить минимальный элемент - по указателю на первый элемент.
+
+\vspace{\baselineskip}
+
+Сам код:
+
+\vspace{\baselineskip}
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+#include <vector>
+#include <set>
+
+using namespace std;
+
+const long long INF = 1e13 + 7;
+
+struct TEdge {
+    int to, cost;
+};
+
+int main() {
+
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cout.tie(nullptr);
+
+    int n, m, s, f;
+    cin >> n >> m >> s >> f;
+    s--;
+    f--;
+
+    int a, b, c;
+    vector<vector<TEdge>> G(n);
+    for (int i = 0; i < m; ++i) {
+        cin >> a >> b >> c;
+        a--;
+        b--;
+        G[a].push_back({b, c});
+        G[b].push_back({a, c});
+    }
+
+    long long dis = 0;
+    vector<long long> d(n, INF);
+    d[s] = 0;
+
+    set<pair<long long, int>> st; // 1 -- dist, 2 -- num
+    st.insert({0, s});
+
+    while (!st.empty()) {
+
+        pair<long long,int> p = *st.begin();
+        long long dist = p.first;
+        int current = p.second;
+        if (current == f) {
+            dis = dist;
+            break;
+        }
+        st.erase(st.begin());
+        
+        for (TEdge to_cost: G[current]) {
+            int to = to_cost.to;
+            long long cost = to_cost.cost;
+            if (d[to] > d[current] + cost) {
+                st.erase({d[to], to});
+                d[to] = d[current] + cost;
+                st.insert({d[to], to});
+            }
+        }  
+    }
+
+    if (!st.empty()) {
+        cout << dis << "\n";
+    } else {
+        cout << "No solution" << "\n";
+    }
+
+    return 0;
+}
+\end{lstlisting}
+
+\vspace{\baselineskip}
+
+\pagebreak
+
+\section{Консоль}
+\begin{alltt}
+parsifal@DESKTOP-3G70RV4:~/DA/Lab9\$ make
+g++ -std=c++17 -O3 -Wextra -Wall -pedantic main.cpp -o Lab9
+parsifal@DESKTOP-3G70RV4:~/DA/Lab9\$ cat test0.txt 
+5 6 1 5
+1 2 2
+1 3 0
+3 2 10
+4 2 1
+3 4 4
+4 5 5
+parsifal@DESKTOP-3G70RV4:~/DA/Lab9\$ ./Lab9 < test0.txt 
+8
+parsifal@DESKTOP-3G70RV4:~/DA/Lab9\$ cat test.txt 
+5 5 1 5
+1 2 2
+1 3 0
+3 2 10
+4 2 1
+3 4 4
+parsifal@DESKTOP-3G70RV4:~/DA/Lab9\$ ./Lab9 < test.txt 
+No solution
+\end{alltt}
+\pagebreak
