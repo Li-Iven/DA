@@ -1,0 +1,206 @@
+\section{Тест производительности}
+
+Тест производительности представляет из себя следующее: мы обрабатываем начальный набор данных и сохраняем пары \enquote{ключ - значение} двумя способами: нашим АВЛ-деревом и c помощью std::map.
+
+\vspace{\baselineskip}
+
+Для этого создаём программу для генерации тестов. 
+
+\vspace{\baselineskip}
+\begin{lstlisting}[language=Python]
+import sys
+import random
+import string
+
+def get_random_key():
+    return random.choice(string.ascii_letters)
+
+actions = ["+", "-", ""]
+
+plus = 0
+minus = 0
+fin = 0
+
+keys = dict()
+test_file_name = "test{:02d}".format(1)
+with open("{0}.t".format(test_file_name), 'w') as output_file, \
+     open("{0}.a".format(test_file_name), "w") as answer_file:
+
+    for _ in range(10):
+        action = random.choice(actions)
+        if action == "+":
+            key = get_random_key()
+            value = random.randint(1, 2 ** 64 - 1)
+            output_file.write("+ {0} {1}\n".format(key, value))
+            key = key.lower()
+            answer = "Exists"
+            if key not in keys:
+                answer = "OK"
+                keys[key] = value
+            answer_file.write("{0}\n".format(answer))
+            plus = plus + 1
+
+        if action == "-":
+            key = get_random_key()
+            value = random.randint(1, 2 ** 64 - 1)
+            output_file.write("- {0}\n".format(key))
+            key = key.lower()
+            answer = "NoSuchWord"
+            if key in keys:
+                answer = "OK"
+                del keys[key]
+            answer_file.write("{0}\n".format(answer))
+            minus = minus + 1
+
+        elif action == "":
+            search_exist_element = random.choice([True, False])
+            key = random.choice([key for key in keys.keys()]) if search_exist_element and len(keys.keys()) > 0 else get_random_key()
+            output_file.write("{0}\n".format(key))
+            key = key.lower()
+            if key in keys:
+                answer = "OK: {0}".format(keys[key])
+            else:
+                answer = "NoSuchWord"
+            answer_file.write("{0}\n".format(answer))
+            fin = fin + 1
+    print(plus, '+, ', minus, '-, ', fin, '?')
+\end{lstlisting}
+
+\vspace{\baselineskip}
+
+Так же создаём бенчмарк, для измерения времени работы структур (с помощью библиотеки chrono - она позволяет замерить время от запуска сортировки до её завершения). Причём проверям на одинаковых данных, но разных рамеров.
+
+\vspace{\baselineskip}
+Здесь в std::map мы храним std::string вместо TKey*, так как во втором случае она будет хранить указатели, а значит сохранит даже указатели на одинаковые ключи, т.е. будет рабоать неправильно.
+
+
+\vspace{\baselineskip}
+\begin{lstlisting}[language=C]
+#include <iostream>
+#include <map>
+#include <chrono>
+#include <string>
+#include <cstring>
+ 
+#include "AVL-tree3.hpp"
+ 
+using duration_t = std::chrono::microseconds;
+ 
+void DoLower(TKey* key) {
+    int lengh = strlen(key);
+    for (int i = 0; i < lengh; i++) {
+        key[i] = tolower(key[i]);
+    }
+}
+ 
+int main() {
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.tie(nullptr);
+ 
+    std::map<std::string, TValue> RB_tree;
+    TAVL tree;
+    TKey* key = new char[SIZE_KEY + 1];
+    TValue value;
+ 
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    int64_t RB_ts = 0, AVL_ts = 0;
+ 
+    while (std::cin >> key) {
+        if (key[0] == '+') {
+            std::cin >> key >> value;
+            DoLower(key);
+ 
+            start = std::chrono::system_clock::now();
+            tree.Root = tree.Insert(tree.Root, key, value);
+            end = std::chrono::system_clock::now();
+            AVL_ts += std::chrono::duration_cast<duration_t>( end - start ).count();
+
+            std::string key_stl = std::string(key);
+
+            start = std::chrono::system_clock::now();
+            RB_tree.insert({key_stl, value});
+            end = std::chrono::system_clock::now();
+            RB_ts += std::chrono::duration_cast<duration_t>( end - start ).count();
+        }
+        else if (key[0] == '-') {
+            std::cin >> key;
+            DoLower(key);
+ 
+            start = std::chrono::system_clock::now();
+            tree.Root = tree.Remove(tree.Root, key);
+            end = std::chrono::system_clock::now();
+            AVL_ts += std::chrono::duration_cast<duration_t>( end - start ).count();
+
+            std::string key_stl = std::string(key);
+ 
+            start = std::chrono::system_clock::now();
+            RB_tree.erase(key_stl);
+            end = std::chrono::system_clock::now();
+            RB_ts += std::chrono::duration_cast<duration_t>( end - start ).count();
+        }
+        else {
+            DoLower(key);
+ 
+            start = std::chrono::system_clock::now();
+            tree.PrintFind(key);
+            end = std::chrono::system_clock::now();
+            AVL_ts += std::chrono::duration_cast<duration_t>( end - start ).count();
+
+            std::string key_stl = std::string(key);
+ 
+            start = std::chrono::system_clock::now();
+            RB_tree.find(key_stl);
+            end = std::chrono::system_clock::now();
+            RB_ts += std::chrono::duration_cast<duration_t>( end - start ).count();
+        }
+        key = new char[SIZE_KEY + 1];
+    }
+ 
+    std::cout << "STL std::map time: " << RB_ts << "\nAVL-tree time: " << AVL_ts << std::endl;
+    return 0;
+}
+\end{lstlisting}
+
+\begin{alltt}
+parsifal@DESKTOP-3G70RV4:~/DA/Lab2\$ python3 generator_tests.py
+33344 +,  33241 -,  33415 ?
+parsifal@DESKTOP-3G70RV4:~/DA/Lab2\$ g++ benchmark_new.cpp
+parsifal@DESKTOP-3G70RV4:~/DA/Lab2\$ ./a.out < test01.t
+В main массив на куче --- В map хранится std::string
+STL std::map time: 53131
+AVL-tree time: 29447
+\end{alltt}
+
+\vspace{\baselineskip}
+
+{\setlength{\extrarowheight}{7pt}
+\begin{center}
+\begin{tabular}{|m{3cm}|m{6cm}|}
+\hline
+\rowcolor{lightgray}
+Количество строк в тесте & Время работы структур данных (мкс)\\
+\hline
+100 &STL std::map time: 74 \newline AVL-tree time: 34\\
+\hline
+1000 &  STL std::map time:: 853 \newline AVL-tree time: 553 \\
+\hline
+10.000 & STL std::map time: 6875 \newline AVL-tree time: 4289\\
+\hline
+100.000 & STL std::map time: 48198 \newline AVL-tree time: 24185\\
+\hline
+1.000.000 & STL std::map time: 489087 \newline AVL-tree time: 222993\\
+\hline
+\end{tabular}
+\end{center}
+}
+
+\vspace{\baselineskip}
+
+Сложности вставки, удаления и поиска в std::map и в АВЛ-деревьях одинаковые - $O(log(n))$ (так как std::map основана на красно-чёрных деревьях). Однако у меня вышло, что время выполнения std::map почти в 2 раза выше, чем выполнение АВЛ-дерева.
+
+\vspace{\baselineskip}
+
+Я думаю это может быть из-за того, что, $O(log(n))$ - это общая оценка, а не точная. Точная же оценка сверху у этих алгоритмов может быть $O(log(n) + 9999)$ или $O(log(n*9999))$ и т.д. И в нашем случае эти 9999 могли сыграть свою роль, замедлив std::map.
+
+\pagebreak
