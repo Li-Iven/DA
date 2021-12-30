@@ -1,0 +1,43 @@
+\CWHeader{Курсовая работа, базовый вариант \textnumero 1.5}
+
+
+{\bfseries Задача:} Требуется разработать программу, читающую входные данные из стандартного потока ввода и выводящую ответ на стандартный поток вывода.
+
+\vspace{\baselineskip}
+Даны входные файлы двух типов.
+
+Первый тип:
+
+\begin{lstlisting}[language=C]
+compress
+<text>
+\end{lstlisting}
+
+\vspace{\baselineskip}
+Текст состоит только из малых латинских букв. В ответ на него нужно вывести коды, которыми будет закодирован данный текст с помощью алгоритма LZW.
+
+\vspace{\baselineskip}
+Второй тип:
+
+\begin{lstlisting}[language=C]
+decompress
+<text>
+\end{lstlisting}
+\vspace{\baselineskip}
+Даны коды в которые был сжат текст из малых латинских букв, нужно его разжать.
+
+\vspace{\baselineskip}
+Начальный словарь состоит выглядит следующим образом:
+
+\begin{lstlisting}[language=C]
+a -> 0
+b -> 1
+c -> 2
+...
+x -> 23
+y -> 24
+z -> 25
+EOF -> 26
+\end{lstlisting}
+
+\pagebreak

@@ -1,0 +1,155 @@
+\section{Теория}
+Требуется написать реализацию алгоритма сжатия LZW.
+
+\vspace{\baselineskip}
+Алгориитм Лемпеля — Зива — Уэлча (Lempel-Ziv-Welch, LZW) — это универсальный алгоритм сжатия данных без потерь, созданный Авраамом Лемпелем (англ. Abraham Lempel), Яаковом Зивом (англ. Jacob Ziv) и Терри Велчем (англ. Terry Welch). Он был опубликован Велчем в 1984 году в качестве улучшенной реализации алгоритма LZ78, опубликованного Лемпелем и Зивом в 1978 году\cite{wikipedia}. (Включение явного символа в вывод после каждой фразы часто является расточительным. В LZW этого избегают с помощью инициализации списка фраз, включающего все символы исходного алфавита.)
+
+
+\vspace{\baselineskip}
+Данный алгоритм при кодировании (сжатии) сообщения динамически создаёт словарь фраз: определённым последовательностям символов (фразам) ставятся в соответствие группы битов (коды). Словарь инициализируется всеми 1-символьными фразами.
+
+\vspace{\baselineskip}
+Формально данный алгоритм можно описать следующей последовательностью шагов:
+
+\begin{enumerate}
+    \item Инициализация словаря всеми возможными односимвольными фразами. Инициализация входной фразы W первым символом сообщения.
+    \item Если КОНЕЦ\_СООБЩЕНИЯ, то выдать код для W и завершить алгоритм.
+    \item Считать очередной символ K из кодируемого сообщения.
+    \item Если фраза WK уже есть в словаре, то присвоить входной фразе W значение WK и перейти к Шагу 2.
+    \item Иначе выдать код W, добавить WK в словарь, присвоить входной фразе W значение K и перейти к Шагу 2.
+\end{enumerate}
+
+\vspace{\baselineskip}
+Алгоритму декодирования на входе требуется только закодированный текст: соответствующий словарь фраз легко воссоздаётся посредством имитации работы алгоритма кодирования
+
+\begin{enumerate}
+    \item Инициализация словаря всеми возможными односимвольными фразами. Инициализация входного кода С первым числом сообщения.
+    \item Если КОНЕЦ\_СООБЩЕНИЯ, то выдать фразу для С и завершить алгоритм.
+    \item Выдать фразу W, соответствующую С.
+    \item Считать очередное число C2 из сообщения.
+    \item Если фраза, образованная слиянием фраз кодов С и C2 = WK, уже есть в словаре, то присвоить входной фразе W значение WK и перейти к Шагу 2.
+    \item Иначе добавить WK в словарь, присвоить входной фразе W значение K и перейти к Шагу 2.
+    \item Если же мы встречаем код, не принадлежащий текущему, восстановленному нами алфавиту, то надо сконкатенировать предудущую строку и её первый символ.
+\end{enumerate}
+
+\pagebreak
+
+\section{Исходный код}
+
+В начале кодирования мы создаём словарь с ключом-фразой и значением-числом, и заполняем его начальными символами. В начале декодирования создаём тот же словарь, но уже с ключом-числом - так как мы будем уже искать фразу по коду, а не наоборот.
+
+\vspace{\baselineskip}
+Алгоритмы кодирования и декодирования были подробно описаны в разделе Теория.
+
+\vspace{\baselineskip}
+Листинг кода:
+
+\vspace{\baselineskip}
+
+\begin{lstlisting}[language=C]
+#include <iostream>
+#include <map>
+#include <unordered_map>
+
+using namespace std;
+
+void Encoding() {
+
+   unordered_map<string, int> Dictionary;
+    for (int i = 0; i < 26; ++i) {
+        string s;
+        s.push_back('a' + i);
+        Dictionary.insert(pair<string, int>(s, i));
+        Dictionary[s] = i;
+    }
+    Dictionary.insert(pair<string, int>("EOF", 26));
+
+    char c;
+    string word;
+    while((c = getchar())) {
+        string tmp = word;
+        word += c;
+        if(c == EOF) {
+            word = tmp;
+            cout << Dictionary[tmp] << "\n";
+            break;
+        }
+        if((Dictionary.count(word) == 0) && (c != '\n')) {
+            cout << Dictionary[tmp] << " ";
+            int size = Dictionary.size();
+            Dictionary.insert(pair<string, int>(word, size));
+            word = c;
+        }
+    }
+}
+
+void Decoding() {
+
+    unordered_map<int, string> CodeDictionary;
+    for (int i = 0; i < 26; ++i) {
+        string s;
+        s.push_back('a' + i);
+        CodeDictionary.insert(pair<int, string>(i, s));
+        CodeDictionary[i] = s;
+    }
+    CodeDictionary.insert(pair<int, string>(26, "EOF"));
+
+    int code;
+    string pattern;
+    while(cin >> code) {
+        string tmp = pattern;
+        if(CodeDictionary.count(code) != 0) {
+            pattern = CodeDictionary[code];
+
+            if(pattern == "EOF") {
+                cout << "\n";
+                break;
+            }
+
+            cout  << pattern;
+            if(tmp != "") {
+                pattern = tmp + pattern.front();
+                int size = CodeDictionary.size();
+                CodeDictionary.insert(pair<int, string>(size, pattern));
+                pattern = CodeDictionary[code];
+            }
+        }
+        else {
+            pattern = tmp + tmp.front();
+            int size = CodeDictionary.size();
+            CodeDictionary.insert(pair<int, string>(size, pattern));
+            cout  << pattern;
+        }
+    }
+}
+
+int main() {
+
+    string command;
+    getline(cin, command);
+    if(command == "compress") Encoding();
+    else if(command == "decompress") Decoding();
+    else cout << "Incorrect command!";
+
+    return 0;
+}
+\end{lstlisting}
+
+\pagebreak
+
+\section{Консоль}
+\begin{alltt}
+parsifal@DESKTOP-3G70RV4:~/DA/Curs\$ make
+g++ -std=c++17 -O3 -Wextra -Wall -pedantic main.cpp -o Curs
+parsifal@DESKTOP-3G70RV4:~/DA/Curs\$ cat test.txt 
+compress
+acagaatagaga
+parsifal@DESKTOP-3G70RV4:~/DA/Curs\$ ./Curs < test.txt
+0 2 0 6 0 0 19 29 34
+parsifal@DESKTOP-3G70RV4:~/DA/Curs\$ cat test.txt 
+decompress
+0 2 0 6 0 0 19 29 34
+parsifal@DESKTOP-3G70RV4:~/DA/Curs\$ ./Curs < test.txt
+acagaatagaga
+\end{alltt}
+\pagebreak
